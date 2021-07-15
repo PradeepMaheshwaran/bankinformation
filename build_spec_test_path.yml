@@ -1,0 +1,58 @@
+version: 0.1
+component: build
+timeoutInSeconds: 6000
+runAs: root
+shell: bash
+env:
+  variables:
+    "MAJOR_VERSION" : "12"
+  exportedVariables:
+    - MINOR_VERSION
+    - PATCH_NUMBER
+    - TAG_VERSION
+
+# inputArtifacts:
+#   - name: hello-dev-jar
+#     location: hello123.class
+
+steps:
+  - type: Command
+    name: "Export variables"
+    timeoutInSeconds: 40
+    command: |
+      export MINOR_VERSION=5
+      export PATCH_NUMBER=26
+      export TAG_VERSION=6.0
+    onFailure:
+      - type: Command
+        timeoutInSeconds: 40
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 400
+        runAs: root
+  - type: Command
+    timeoutInSeconds: 1200
+    name: "Build"
+    command: |
+      cd ${OCI_WORKSPACE_DIR}/source1
+      mvn clean install
+      docker build -t demo_app .
+    onFailure:
+      - type: Command
+        command: |
+          echo "Handling Failure"
+          echo "Failure successfully handled"
+        timeoutInSeconds: 40
+        runAs: root
+
+outputArtifacts:
+  - name: output01
+    type: BINARY
+    location: ${OCI_WORKSPACE_DIR}/source1/target/bankinformation-0.0.1-SNAPSHOT.jar
+  - name: output02
+    type: BINARY
+    location: ${OCI_WORKSPACE_DIR}/source1/target/bankinformation-0.0.1-SNAPSHOT.jar.original
+  - name: output03
+    type: DOCKER_IMAGE
+    location: demo_app:latest
